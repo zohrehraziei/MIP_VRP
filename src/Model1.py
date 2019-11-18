@@ -62,10 +62,10 @@ def vrp(V,c,m,q,Q):
                 x[i,j] = model.addVar(ub=1, vtype="I", name="x(%s,%s)"%(i,j))
     model.update()
 
-    model.addConstr(quicksum(x[V[0],j] for j in V[1:]) == 2*m, "DegreeDepot")
+    model.addConstr(quicksum(x[V[0],j] for j in V[1:]) == 1*m, "DegreeDepot")
     for i in V[1:]:
         model.addConstr(quicksum(x[j,i] for j in V if j < i) +
-                        quicksum(x[i,j] for j in V if j > i) == 2, "Degree(%s)"%i)
+                        quicksum(x[i,j] for j in V if j > i) == 1, "Degree(%s)"%i)
 
     model.setObjective(quicksum(c[i,j]*x[i,j] for i in V for j in V if j>i), GRB.MINIMIZE)
 
@@ -87,6 +87,7 @@ def make_data(n):
     Q = 100
     for i in V:
         q[i] = random.randint(10,20)
+       # Valuee[i] = random.randint(20,30)
         for j in V:
             if j > i:
                 c[i,j] = distance(x[i],y[i],x[j],y[j])
