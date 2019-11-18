@@ -1,123 +1,121 @@
-# -*- coding: utf-8 -*-
 """
-Created on Sun Nov 17 19:36:28 2019
-
-@author: zohreh- zohrehraziei@gmail.com
-
+vrp.py:  model for the vehicle routing problem using callback for adding cuts.
+            
+approach:
+    - start with assignment model
+    - add cuts until all components of the graph are connected
+reference: Prof. KUBO's code
 """
-
-#!/usr/bin/python
-
-# Copyright 2019, Gurobi Optimization, LLC
-
-# Solve a traveling salesman problem on a randomly generated set of
-# points using lazy constraints.   The base MIP model only includes
-# 'degree-2' constraints, requiring each node to have exactly
-# two incident edges.  Solutions to this model may contain subtours -
-# tours that don't visit every city.  The lazy constraint callback
-# adds new constraints to cut them off.
-
-import sys
 import math
 import random
-import itertools
+import networkx
 from gurobipy import *
 
-# Callback - use lazy constraints to eliminate sub-tours
-
-def subtourelim(model, where):
-    if where == GRB.Callback.MIPSOL:
-        # make a list of edges selected in the solution
-        vals = model.cbGetSolution(model._vars)
-        selected = tuplelist((i,j) for i,j in model._vars.keys() if vals[i,j] > 0.5)
-        # find the shortest cycle in the selected edge list
-        tour = subtour(selected)
-        if len(tour) < n:
-            # add subtour elimination constraint for every pair of cities in tour
-            model.cbLazy(quicksum(model._vars[i,j]
-                                  for i,j in itertools.combinations(tour, 2))
-                         <= len(tour)-1)
-
-
-# Given a tuplelist of edges, find the shortest subtour
-
-def subtour(edges):
-    unvisited = list(range(n))
-    cycle = range(n+1) # initial length has 1 more city
-    while unvisited: # true if list is non-empty
-        thiscycle = []
-        neighbors = unvisited
-        while neighbors:
-            current = neighbors[0]
-            thiscycle.append(current)
-            unvisited.remove(current)
-            neighbors = [j for i,j in edges.select(current,'*') if j in unvisited]
-        if len(cycle) > len(thiscycle):
-            cycle = thiscycle
-    return cycle
-
-
-# Parse argument
-
-#if len(sys.argv) < 2:
-#    print('Usage: tsp.py npoints')
-#    exit(1)
-#n = int(sys.argv[1])
-n = int(10)
-
-
-# Create n random points
-
-random.seed(1)
-points = [(random.randint(0,100),random.randint(0,100)) for i in range(n)]
-
-# Dictionary of Euclidean distance between each pair of points
-
-dist = {(i,j) :
-    math.sqrt(sum((points[i][k]-points[j][k])**2 for k in range(2)))
-    for i in range(n) for j in range(i)}
-
-m = Model()
-
-# Create variables
-
-vars = m.addVars(dist.keys(), obj=dist, vtype=GRB.BINARY, name='e')
-for i,j in vars.keys():
-    vars[j,i] = vars[i,j] # edge in opposite direction
-
-# You could use Python looping constructs and m.addVar() to create
-# these decision variables instead.  The following would be equivalent
-# to the preceding m.addVars() call...
-#
-# vars = tupledict()
-# for i,j in dist.keys():
-#   vars[i,j] = m.addVar(obj=dist[i,j], vtype=GRB.BINARY,
-#                        name='e[%d,%d]'%(i,j))
+def vrp(V,c,m,q,Q):
+    """solve_vrp -- solve the vehicle routing problem.
+       - start with assignment model (depot has a special status)
+       - add cuts until all components of the graph are connected
+    Parameters:
+        - V: set/list of nodes in the graph
+        - c[i,j]: cost for traversing edge (i,j)
+        - m: number of vehicles available
+        - q[i]: demand for customer i
+        - Q: vehicle capacity
+    Returns the optimum objective value and the list of edges used.
+    """
+    def vrp_callback(model,where):
+        """vrp_callback: add constraint to eliminate infeasible solutions
+        Parameters: gurobi standard:
+            - model: current model
+            - where: indicator for location in the search
+        If solution is infeasible, adds a cut using cbLazy
+        """
+        # remember to set     model.params.DualReductions = 0     before using!
+        # remember to set     model.params.LazyConstraints = 1     before using!
+        if where != GRB.callback.MIPSOL:
+            return
+        edges = []
+        for (i,j) in x:
+            if model.cbGetSolution(x[i,j]) > .5:
+                if i != V[0] and j != V[0]:
+                    edges.append( (i,j) )
+        G = networkx.Graph()
+        G.add_edges_from(edges)
+        Components = networkx.connected_components(G)
+        for S in Components:
+            S_card = len(S)
+            q_sum = sum(q[i] for i in S)
+            NS = int(math.ceil(float(q_sum)/Q))
+            S_edges = [(i,j) for i in S for j in S if i<j and (i,j) in edges]
+            if S_card >= 3 and (len(S_edges) >= S_card or NS > 1):
+                model.cbLazy(quicksum(x[i,j] for i in S for j in S if j > i) <= S_card-NS)
+                print ("adding cut for",S_edges)
+        return
 
 
-# Add degree-2 constraint
+    model = Model("vrp")
+    x = {}
+    for i in V:
+        for j in V:
+            if j > i and i == V[0]:       # depot
+                x[i,j] = model.addVar(ub=2, vtype="I", name="x(%s,%s)"%(i,j))
+            elif j > i:
+                x[i,j] = model.addVar(ub=1, vtype="I", name="x(%s,%s)"%(i,j))
+    model.update()
 
-m.addConstrs(vars.sum(i,'*') == 2 for i in range(n))
+    model.addConstr(quicksum(x[V[0],j] for j in V[1:]) == 2*m, "DegreeDepot")
+    for i in V[1:]:
+        model.addConstr(quicksum(x[j,i] for j in V if j < i) +
+                        quicksum(x[i,j] for j in V if j > i) == 2, "Degree(%s)"%i)
 
-# Using Python looping constructs, the preceding would be...
-#
-# for i in range(n):
-#   m.addConstr(sum(vars[i,j] for j in range(n)) == 2)
+    model.setObjective(quicksum(c[i,j]*x[i,j] for i in V for j in V if j>i), GRB.MINIMIZE)
+
+    model.update()
+    model.__data = x
+    return model,vrp_callback
 
 
-# Optimize model
+def distance(x1,y1,x2,y2):
+    """distance: euclidean distance between (x1,y1) and (x2,y2)"""
+    return math.sqrt((x2-x1)**2 + (y2-y1)**2)
 
-m._vars = vars
-m.Params.lazyConstraints = 1
-m.optimize(subtourelim)
+def make_data(n):
+    """make_data: compute matrix distance based on euclidean distance"""
+    V = range(1,n+1)
+    x = dict([(i,random.random()) for i in V])
+    y = dict([(i,random.random()) for i in V])
+    c,q = {},{}
+    Q = 100
+    for i in V:
+        q[i] = random.randint(10,20)
+        for j in V:
+            if j > i:
+                c[i,j] = distance(x[i],y[i],x[j],y[j])
+    return V,c,q,Q
+    
+            
+if __name__ == "__main__":
+    import sys
 
-vals = m.getAttr('x', vars)
-selected = tuplelist((i,j) for i,j in vals.keys() if vals[i,j] > 0.5)
+    n = 19
+    m = 3
+    seed = 1
+    random.seed(seed)
+    V,c,q,Q = make_data(n)
+    model,vrp_callback = vrp(V,c,m,q,Q)
 
-tour = subtour(selected)
-assert len(tour) == n
+    # model.Params.OutputFlag = 0 # silent mode
+    model.params.DualReductions = 0
+    model.params.LazyConstraints = 1
+    model.optimize(vrp_callback)
+    x = model.__data
+    
+    edges = []
+    for (i,j) in x:
+        if x[i,j].X > .5:
+            if i != V[0] and j != V[0]:
+                edges.append( (i,j) )
 
-print('')
-print('Optimal tour: %s' % str(tour))
-print('Optimal cost: %g' % m.objVal)
-print('')
+    print ("Optimal solution:",model.ObjVal)
+    print ("Edges in the solution:")
+    print (sorted(edges))
