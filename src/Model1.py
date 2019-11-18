@@ -4,7 +4,6 @@ vrp.py:  model for the vehicle routing problem using callback for adding cuts.
 approach:
     - start with assignment model
     - add cuts until all components of the graph are connected
-reference: Prof. KUBO's code
 """
 import math
 import random
@@ -17,7 +16,7 @@ def vrp(V,c,m,q,Q):
        - add cuts until all components of the graph are connected
     Parameters:
         - V: set/list of nodes in the graph
-        - c[i,j]: cost for traversing edge (i,j)
+        - c[i,j]: travel cost for traversing edge (i,j)
         - m: number of vehicles available
         - q[i]: demand for customer i
         - Q: vehicle capacity
