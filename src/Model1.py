@@ -1,10 +1,29 @@
 """
 Porgrammer Zohreh Raziei: zohrehraziei@gmail.com
-vrp.py:  model for the vehicle routing problem using callback for adding cuts.
+vehicle Routing Problem with using callback for adding cuts
+
             
 approach:
-    - start with assignment model
-    - add cuts until all components of the graph are connected
+
+       - solve the vehicle routing problem.
+       - start with assignment model (depot has a special status)
+       - add cuts until all components of the graph are connected
+       
+    Parameters:
+        - V: set/list of nodes in the graph
+        - c[i,j]: travel cost for traversing edge (i,j)
+        - m: number of vehicles available
+        - q[i]: demand for customer i
+        - Q: vehicle capacity
+        
+    Returns the optimum objective value and the list of edges used.
+    
+    vrp_callback: add constraint to eliminate infeasible solutions
+            - Parameters: gurobi standard:
+            - model: current model
+            - where: indicator for location in the search
+        If solution is infeasible, adds a cut using cbLazy
+        
 """
 import math
 import random
@@ -12,24 +31,8 @@ import networkx
 from gurobipy import *
 
 def vrp(V,c,m,q,Q):
-    """solve_vrp -- solve the vehicle routing problem.
-       - start with assignment model (depot has a special status)
-       - add cuts until all components of the graph are connected
-    Parameters:
-        - V: set/list of nodes in the graph
-        - c[i,j]: travel cost for traversing edge (i,j)
-        - m: number of vehicles available
-        - q[i]: demand for customer i
-        - Q: vehicle capacity
-    Returns the optimum objective value and the list of edges used.
-    """
     def vrp_callback(model,where):
-        """vrp_callback: add constraint to eliminate infeasible solutions
-        Parameters: gurobi standard:
-            - model: current model
-            - where: indicator for location in the search
-        If solution is infeasible, adds a cut using cbLazy
-        """
+
         # remember to set     model.params.DualReductions = 0     before using!
         # remember to set     model.params.LazyConstraints = 1     before using!
         if where != GRB.callback.MIPSOL:
