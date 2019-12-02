@@ -101,8 +101,8 @@ def make_data(n):
 if __name__ == "__main__":
     import sys
 
-    n = 10
-    m = 1
+    n = 20
+    m = 2
     seed = 1
     random.seed(seed)
     V,c,q,Q = make_data(n)
@@ -118,8 +118,9 @@ if __name__ == "__main__":
     x = model.__data
     
     edges = []
+    tour = ''
     for (k,l) in x:
-        if x[k,l].X > .5 and k == V[0]:
+        if x[k,l].X > .5 and k == V[0] and str(l) not in tour:
             tour = str(k) + ' - ' + str(l)
             fi = k
             fj = l
