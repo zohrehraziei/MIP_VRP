@@ -109,16 +109,40 @@ if __name__ == "__main__":
     model,vrp_callback = vrp(V,c,m,q,Q)
 
     # model.Params.OutputFlag = 0 # silent mode
-    model.params.DualReductions = 0
-    model.params.LazyConstraints = 1
+    # 0 : min value
+    model.params.DualReductions = 0 
+    model.params.LazyConstraints = 1  
+    #1: Implies Gurobi algorithms to avoid certain reductions and transformations
+    #that are incompatible with lazy constraints.
     model.optimize(vrp_callback)
     x = model.__data
     
     edges = []
-    for (i,j) in x:
-        if x[i,j].X > .5:
-            if i != V[0] and j != V[0]:
-                edges.append( (i,j) )
+    for (k,l) in x:
+        if x[k,l].X > .5 and k == V[0]:
+            tour = str(k) + ' - ' + str(l)
+            fi = k
+            fj = l
+            nextn = l   
+            point = [str(k) + ',' + str(l)]
+            condit = True
+            prevnext = nextn 
+            for v in V:
+                for (ii,jj) in x:
+                    e = str(ii) + ',' + str(jj)
+                    if e not in point and x[ii,jj].X > .5:
+                        if str(nextn) == str(ii):
+                            point.append(str(ii) + ',' + str(jj))
+                            tour += ' - ' + str(jj)
+                            nextn = jj
+                        elif str(nextn) == str(jj):
+                            point.append(str(ii) + ',' + str(jj))
+                            tour += ' - ' + str(ii)
+                            nextn = ii
+                        if nextn == V[0]:
+                            edges.append(tour)
+
+                
 
     print ("Optimal solution:",model.ObjVal)
     print ("Edges in the solution:")
