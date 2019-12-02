@@ -119,16 +119,18 @@ if __name__ == "__main__":
     
     edges = []
     tour = ''
-    for (k,l) in x:
-        if x[k,l].X > .5 and k == V[0] and str(l) not in tour:
-            tour = str(k) + ' - ' + str(l)
-            fi = k
-            fj = l
-            nextn = l   
-            point = [str(k) + ',' + str(l)]
+    for i in V:
+        if i > V[0] and x[V[0],i].X > .5 and str(i) not in tour:
+            tour = str(V[0]) + ' - ' + str(i)
+            fi = V[0]
+            fj = i
+            nextn = i   
+            point = [str(V[0]) + ',' + str(i)]
             condit = True
             prevnext = nextn 
             for v in V:
+                if nextn == V[0]:
+                    break;
                 for (ii,jj) in x:
                     e = str(ii) + ',' + str(jj)
                     if e not in point and x[ii,jj].X > .5:
@@ -142,6 +144,7 @@ if __name__ == "__main__":
                             nextn = ii
                         if nextn == V[0]:
                             edges.append(tour)
+                            break;
 
                 
 
