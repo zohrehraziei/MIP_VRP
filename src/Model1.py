@@ -30,7 +30,7 @@ import random
 import networkx
 from gurobipy import *
 
-def vrp(V,c,m,q,Q):
+def vrp(V,c,m,q,Q,vlu):
     def vrp_callback(model,where):
 
         # remember to set     model.params.DualReductions = 0     before using!
@@ -87,7 +87,7 @@ def make_data(n):
     V = range(1,n+1)
     x = dict([(i,random.random()) for i in V])
     y = dict([(i,random.random()) for i in V])
-    c,q = {},{}
+    c,q,vlu = {},{}
     Q = 200
     for i in V:
      #   q[i] = random.randint(10,20)
@@ -95,43 +95,39 @@ def make_data(n):
         for j in V:
             if j > i:
                 c[i,j] = distance(x[i],y[i],x[j],y[j])
-    return V,c,q,Q
+                
+    return V,c,q,Q,vlu
 
 def read_data():
     import xlrd
     file_loc=".\\dist.xlsx"
     wkb=xlrd.open_workbook(file_loc)
-    sheet=wkb.sheet_by_index(0)
-    
-    _matrix=[]
+    dat_mat = []
     nrow = 0
-    for row in range (sheet.nrows):
-        _row = []
-        nrow += 1
-        for col in range (sheet.ncols):
-            _row.append(sheet.cell_value(row,col))
-        _matrix.append(_row)
-        
-    sheet=wkb.sheet_by_index(1)
+    for sht in range(3): #Three sheets: 0:c[i,j] 1:q[j], 2:vlu[j]
+        sheet=wkb.sheet_by_index(sht)
+        _matrix=[]
+        nrow = 0
+        for row in range (sheet.nrows):
+            _row = []
+            nrow += 1
+            for col in range (sheet.ncols):
+                _row.append(sheet.cell_value(row,col))
+            _matrix.append(_row)    
+        dat_mat.append(_matrix)
     
-    _matrixD=[]
-    for row in range (sheet.nrows):
-        _row = []
-        for col in range (sheet.ncols):
-            _row.append(sheet.cell_value(row,col))
-        _matrixD.append(_row)      
-         
     V = range(1,nrow+1)
-    c,q = {},{}
+    c,q,vlu = {},{},{}
     Q = 500
    # q = {}
     for i in V:
-        q[i] = _matrixD[i-1][0]
+        q[i] = dat_mat[1][i-1][0]
+        vlu[i] = dat_mat[2][i-1][0]
         for j in V:
             if j > i:
-                c[i,j] = _matrix[i-1][j-1]
+                c[i,j] = dat_mat[0][i-1][j-1]
           
-    return V,c,q,Q
+    return V,c,q,Q,vlu
 
             
 if __name__ == "__main__":
@@ -142,8 +138,8 @@ if __name__ == "__main__":
     seed = 1
     random.seed(seed)
     #V,c,q,Q = make_data(n)
-    V,c,q,Q = read_data()
-    model,vrp_callback = vrp(V,c,m,q,Q)
+    V,c,q,Q,vlu = read_data()
+    model,vrp_callback = vrp(V,c,m,q,Q,vlu)
 
     # model.Params.OutputFlag = 0 # silent mode
     # 0 : min value
