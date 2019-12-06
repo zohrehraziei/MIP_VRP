@@ -89,6 +89,7 @@ def make_data(n):
     y = dict([(i,random.random()) for i in V])
     c,q = {},{}
     Q = 200
+    q = {}
     for i in V:
         q[i] = random.randint(10,20)
        # Valuee[i] = random.randint(20,30)
@@ -96,16 +97,45 @@ def make_data(n):
             if j > i:
                 c[i,j] = distance(x[i],y[i],x[j],y[j])
     return V,c,q,Q
+
+def read_data():
+    import xlrd
+    file_loc=".\\dist.xlsx"
+    wkb=xlrd.open_workbook(file_loc)
+    sheet=wkb.sheet_by_index(0)
     
+    _matrix=[]
+    nrow = 0
+    for row in range (sheet.nrows):
+        _row = []
+        nrow += 1
+        for col in range (sheet.ncols):
+            _row.append(sheet.cell_value(row,col))
+        _matrix.append(_row)
+         
+    V = range(1,nrow+1)
+    c,q = {},{}
+    Q = 200
+    q = {}
+    for i in V:
+        q[i] = random.randint(10,20)
+       # Valuee[i] = random.randint(20,30)
+        for j in V:
+            if j > i:
+                c[i,j] = _matrix[i-1][j-1]
+          
+    return V,c,q,Q
+
             
 if __name__ == "__main__":
     import sys
 
-    n = 20
+    #n = 20
     m = 2
     seed = 1
     random.seed(seed)
-    V,c,q,Q = make_data(n)
+    #V,c,q,Q = make_data(n)
+    V,c,q,Q = read_data()
     model,vrp_callback = vrp(V,c,m,q,Q)
 
     # model.Params.OutputFlag = 0 # silent mode
@@ -120,31 +150,37 @@ if __name__ == "__main__":
     edges = []
     tour = ''
     for i in V:
-        if i > V[0] and x[V[0],i].X > .5 and str(i) not in tour:
-            tour = str(V[0]) + ' - ' + str(i)
-            fi = V[0]
-            fj = i
-            nextn = i   
-            point = [str(V[0]) + ',' + str(i)]
-            condit = True
-            prevnext = nextn 
-            for v in V:
-                if nextn == V[0]:
-                    break;
-                for (ii,jj) in x:
-                    e = str(ii) + ',' + str(jj)
-                    if e not in point and x[ii,jj].X > .5:
-                        if str(nextn) == str(ii):
-                            point.append(str(ii) + ',' + str(jj))
-                            tour += ' - ' + str(jj)
-                            nextn = jj
-                        elif str(nextn) == str(jj):
-                            point.append(str(ii) + ',' + str(jj))
-                            tour += ' - ' + str(ii)
-                            nextn = ii
-                        if nextn == V[0]:
-                            edges.append(tour)
-                            break;
+        if i > V[0] and x[V[0],i].X > .5:
+            cond = True
+            for t in edges:
+                if str(i) in t:
+                    cond = False
+                    break
+            if cond == True:
+                tour = str(V[0]) + ' - ' + str(i)
+                fi = V[0]
+                fj = i
+                nextn = i   
+                point = [str(V[0]) + ',' + str(i)]
+                condit = True
+                prevnext = nextn 
+                for v in V:
+                    if nextn == V[0]:
+                        break;
+                    for (ii,jj) in x:
+                        e = str(ii) + ',' + str(jj)
+                        if e not in point and x[ii,jj].X > .5:
+                            if str(nextn) == str(ii):
+                                point.append(str(ii) + ',' + str(jj))
+                                tour += ' - ' + str(jj)
+                                nextn = jj
+                            elif str(nextn) == str(jj):
+                                point.append(str(ii) + ',' + str(jj))
+                                tour += ' - ' + str(ii)
+                                nextn = ii
+                            if nextn == V[0]:
+                                edges.append(tour)
+                                break;
 
                 
 
