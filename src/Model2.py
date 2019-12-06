@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Dec  6 09:59:23 2019
+
+@author: zohre
+"""
+
 """
 Porgrammer Zohreh Raziei: zohrehraziei@gmail.com
 vehicle Routing Problem with using callback for adding cuts
@@ -71,7 +78,7 @@ def vrp(V,c,m,q,Q):
         model.addConstr(quicksum(x[j,i] for j in V if j < i) +
                         quicksum(x[i,j] for j in V if j > i) == 2, "Degree(%s)"%i)
 
-    model.setObjective(quicksum(c[i,j]*x[i,j] for i in V for j in V if j>i), GRB.MINIMIZE)
+    model.setObjective(quicksum(c[i,j]*x[i,j] for i in V for j in V if j>i) + quicksum(p[i]*), GRB.MINIMIZE)
 
     model.update()
     model.__data = x
@@ -87,11 +94,12 @@ def make_data(n):
     V = range(1,n+1)
     x = dict([(i,random.random()) for i in V])
     y = dict([(i,random.random()) for i in V])
-    c,q = {},{}
+    c,q,p = {},{},{}
     Q = 200
+    #q = {}
     for i in V:
-     #   q[i] = random.randint(10,20)
-       # Valuee[i] = random.randint(20,30)
+        q[i] = random.randint(10,20)
+        p[i] = random.randint(5,10)
         for j in V:
             if j > i:
                 c[i,j] = distance(x[i],y[i],x[j],y[j])
@@ -111,22 +119,14 @@ def read_data():
         for col in range (sheet.ncols):
             _row.append(sheet.cell_value(row,col))
         _matrix.append(_row)
-        
-    sheet=wkb.sheet_by_index(1)
-    
-    _matrixD=[]
-    for row in range (sheet.nrows):
-        _row = []
-        for col in range (sheet.ncols):
-            _row.append(sheet.cell_value(row,col))
-        _matrixD.append(_row)      
          
     V = range(1,nrow+1)
     c,q = {},{}
-    Q = 500
-   # q = {}
+    Q = 200
+    q = {}
     for i in V:
-        q[i] = _matrixD[i-1][0]
+        q[i] = random.randint(10,20)
+        p[i] = random.randint(5,10)
         for j in V:
             if j > i:
                 c[i,j] = _matrix[i-1][j-1]
