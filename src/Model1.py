@@ -124,7 +124,7 @@ def read_data():
          
     V = range(1,nrow+1)
     c,q = {},{}
-    Q = 200
+    Q = 100
     q = {}
     for i in V:
         q[i] = _matrixD[i-1]
