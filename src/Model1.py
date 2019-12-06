@@ -112,13 +112,22 @@ def read_data():
         for col in range (sheet.ncols):
             _row.append(sheet.cell_value(row,col))
         _matrix.append(_row)
+        
+    sheet=wkb.sheet_by_index(1)
+    
+    _matrixD=[]
+    for row in range (sheet.nrows):
+        _row = []
+        for col in range (sheet.ncols):
+            _row.append(sheet.cell_value(row,col))
+        _matrixD.append(_row)      
          
     V = range(1,nrow+1)
     c,q = {},{}
     Q = 200
     q = {}
     for i in V:
-        q[i] = random.randint(10,20)
+        q[i] = _matrixD[i-1]
        # Valuee[i] = random.randint(20,30)
         for j in V:
             if j > i:
