@@ -54,9 +54,11 @@ def vrp(V,c,m,q,Q,vlu):
                 model.cbLazy(quicksum(x[i,j] for i in S for j in S if j > i) <= S_card-NS)
                 print ("adding cut for",S_edges)
         return
+    
 
 
     model = Model("vrp")
+    model.setParam('LogToConsole',0)
     x = {}
     for i in V:
         for j in V:
@@ -76,7 +78,53 @@ def vrp(V,c,m,q,Q,vlu):
     model.update()
     model.__data = x
     return model,vrp_callback
+###############################################################################
+def vrp2(V,c,m,q,Q,vlu):    
+    def vrp_cutgen(model):
+        isCut = False
+        x = model.__data
+        edges = []
+        for (i,j) in x:
+            if x[i,j].X > .5:
+                if i != V[0] and j != V[0]:
+                    edges.append( (i,j) )
+        G = networkx.Graph()
+        G.add_edges_from(edges)
+        Components = networkx.connected_components(G)
+        for S in Components:
+            S_card = len(S)
+            q_sum = sum(q[i] for i in S)
+            NS = int(math.ceil(float(q_sum)/Q))
+            S_edges = [(i,j) for i in S for j in S if i<j and (i,j) in edges]
+            if S_card >= 3 and (len(S_edges) >= S_card or NS > 1):
+                model.addConstr(quicksum(x[i,j] for i in S for j in S if j > i) <= S_card-NS)
+                print ("adding cut for",S_edges)
+                isCut = True
+                
+        return isCut
 
+
+    model = Model("vrp")
+    model.setParam('LogToConsole',0)
+    x = {}
+    for i in V:
+        for j in V:
+            if j > i and i == V[0]:       # depot
+                x[i,j] = model.addVar(ub=2, vtype="I", name="x(%s,%s)"%(i,j))
+            elif j > i:
+                x[i,j] = model.addVar(ub=1, vtype="I", name="x(%s,%s)"%(i,j))
+    model.update()
+
+    model.addConstr(quicksum(x[V[0],j] for j in V[1:]) == 2*m, "DegreeDepot")
+    for i in V[1:]:
+        model.addConstr(quicksum(x[j,i] for j in V if j < i) +
+                        quicksum(x[i,j] for j in V if j > i) == 2, "Degree(%s)"%i)
+
+    model.setObjective(quicksum(c[i,j]*x[i,j] for i in V for j in V if j>i), GRB.MINIMIZE)
+
+    model.update()
+    model.__data = x
+    return model,vrp_cutgen
 
 def distance(x1,y1,x2,y2):
     """distance: euclidean distance between (x1,y1) and (x2,y2)"""
@@ -88,7 +136,7 @@ def make_data(n):
     x = dict([(i,random.random()) for i in V])
     y = dict([(i,random.random()) for i in V])
     c,q,vlu = {},{}
-    Q = 200
+    Q = 1000
     for i in V:
      #   q[i] = random.randint(10,20)
        # Valuee[i] = random.randint(20,30)
@@ -118,7 +166,7 @@ def read_data():
     
     V = range(1,nrow+1)
     c,q,vlu = {},{},{}
-    Q = 500
+    Q = 1000
    # q = {}
     for i in V:
         q[i] = dat_mat[1][i-1][0]
@@ -129,27 +177,7 @@ def read_data():
           
     return V,c,q,Q,vlu
 
-            
-if __name__ == "__main__":
-    import sys
-
-    #n = 20
-    m = 3
-    seed = 1
-    random.seed(seed)
-    #V,c,q,Q = make_data(n)
-    V,c,q,Q,vlu = read_data()
-    model,vrp_callback = vrp(V,c,m,q,Q,vlu)
-
-    # model.Params.OutputFlag = 0 # silent mode
-    # 0 : min value
-    model.params.DualReductions = 0 
-    model.params.LazyConstraints = 1  
-    #1: Implies Gurobi algorithms to avoid certain reductions and transformations
-    #that are incompatible with lazy constraints.
-    model.optimize(vrp_callback)
-    x = model.__data
-    
+def represent(x):
     edges = []
     tour = ''
     for i in V:
@@ -161,15 +189,12 @@ if __name__ == "__main__":
                     break
             if cond == True:
                 tour = str(V[0]) + ' - ' + str(i)
-                fi = V[0]
-                fj = i
                 nextn = i   
+                prevnext = nextn
                 point = [str(V[0]) + ',' + str(i)]
-                condit = True
-                prevnext = nextn 
                 for v in V:
                     if nextn == V[0]:
-                        break;
+                        break
                     for (ii,jj) in x:
                         e = str(ii) + ',' + str(jj)
                         if e not in point and x[ii,jj].X > .5:
@@ -183,10 +208,67 @@ if __name__ == "__main__":
                                 nextn = ii
                             if nextn == V[0]:
                                 edges.append(tour)
-                                break;
-
+                                break
+                if nextn == prevnext:
+                    tour += ' - ' + str(V[0])
+                    edges.append(tour)
                 
+    return edges
 
+def var_print(x):
+    for var in x:
+        if x[var].X > 0.5:
+            print (x[var])
+
+ 
+           
+if __name__ == "__main__":
+    import sys
+    import time
+    
+    
+    #n = 20
+    m = 2
+    seed = 1
+    random.seed(seed)
+    #V,c,q,Q = make_data(n)
+    V,c,q,Q,vlu = read_data()
+    model,vrp_callback = vrp(V,c,m,q,Q,vlu)
+
+    # model.Params.OutputFlag = 0 # silent mode
+    # 0 : min value
+    model.params.DualReductions = 0 
+    model.params.LazyConstraints = 1  
+    #1: Implies Gurobi algorithms to avoid certain reductions and transformations
+    #that are incompatible with lazy constraints.
+    start_time = time.time()
+    model.optimize(vrp_callback)
+    x = model.__data
+    
+    edges = represent(x)
+    print("--- Callback:")
+    print("--- Running time: %s seconds ---" % (time.time() - start_time))
     print ("Optimal solution:",model.ObjVal)
     print ("Edges in the solution:")
     print (sorted(edges))
+    print ("Positive Vars: ")
+    var_print(x)
+    print("----------------------------------------------------------------")
+   
+    start_time2 = time.time()
+    model,vrp_cutgen = vrp2(V,c,m,q,Q,vlu)
+    model.params.LazyConstraints = 0
+    isCut = True
+    while isCut:
+        model.optimize()
+        isCut = vrp_cutgen(model)
+     
+    x = model.__data
+    print("--- Cut Generation:")
+    print("--- Running time: %s seconds ---" % (time.time() - start_time2))
+    edges = represent(x)
+    print ("Optimal solution:",model.ObjVal)
+    print ("Edges in the solution:")
+    print (sorted(edges))
+    print ("Positive Vars: ")
+    var_print(x)    
