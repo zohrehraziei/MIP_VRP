@@ -28,6 +28,7 @@ def vrp2(V,c,m,q,Q,vlu):
             NS = int(math.ceil(float(q_sum)/Q))
             S_edges = [(i,j) for i in S for j in S if i<j and (i,j) in edges]
             if S_card >= 3 and (len(S_edges) >= S_card or NS > 1):
+                #add cut as a constraint
                 model.addConstr(quicksum(x[i,j] for i in S for j in S if j > i) <= S_card-NS)
                 print ("adding cut for",S_edges)
                 isCut = True

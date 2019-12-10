@@ -51,6 +51,7 @@ def vrp(V,c,m,q,Q,vlu):
             NS = int(math.ceil(float(q_sum)/Q))
             S_edges = [(i,j) for i in S for j in S if i<j and (i,j) in edges]
             if S_card >= 3 and (len(S_edges) >= S_card or NS > 1):
+                #add cut as a lazy constraint
                 model.cbLazy(quicksum(x[i,j] for i in S for j in S if j > i) <= S_card-NS)
                 print ("adding cut for",S_edges)
         return
@@ -254,7 +255,7 @@ if __name__ == "__main__":
     print ("Positive Vars: ")
     var_print(x)
     print("----------------------------------------------------------------")
-   
+    print("--- Cut Generation:")
     start_time2 = time.time()
     model,vrp_cutgen = vrp2(V,c,m,q,Q,vlu)
     model.params.LazyConstraints = 0
@@ -264,7 +265,7 @@ if __name__ == "__main__":
         isCut = vrp_cutgen(model)
      
     x = model.__data
-    print("--- Cut Generation:")
+    
     print("--- Running time: %s seconds ---" % (time.time() - start_time2))
     edges = represent(x)
     print ("Optimal solution:",model.ObjVal)
