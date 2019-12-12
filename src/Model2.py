@@ -65,9 +65,9 @@ def distance(x1,y1,x2,y2):
 def make_data(n):
     """make_data: compute matrix distance based on euclidean distance"""
     V = range(1,n+1)
-    x = dict([(i,random.random()) for i in V])
-    y = dict([(i,random.random()) for i in V])
-    c,q,vlu = {},{}
+    #x = dict([(i,random.random()) for i in V])
+    #y = dict([(i,random.random()) for i in V])
+    c,q,vlu,x,y = {},{},{},{},{}
     Q = 1000
     for i in V:
      #   q[i] = random.randint(10,20)
@@ -98,14 +98,20 @@ def read_data():
     
     V = range(1,nrow+1)
     c,q,vlu = {},{},{}
-    Q = 1000
+    Q = 10000
    # q = {}
     for i in V:
         q[i] = dat_mat[1][i-1][0]
         vlu[i] = dat_mat[2][i-1][0]
+        x[i] = dat_mat[0][i-1][0]
+        y[i] = dat_mat[0][i-1][1]
         for j in V:
             if j > i:
-                c[i,j] = dat_mat[0][i-1][j-1]
+                c[i,j] = distance(x[i],y[i],x[j],y[j])
+            
+#        for j in V:
+#            if j > i:
+#                c[i,j] = dat_mat[0][i-1][j-1]
           
     return V,c,q,Q,vlu
 
