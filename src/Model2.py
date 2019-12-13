@@ -68,7 +68,7 @@ def make_data(n):
     #x = dict([(i,random.random()) for i in V])
     #y = dict([(i,random.random()) for i in V])
     c,q,vlu,x,y = {},{},{},{},{}
-    Q = 1000
+    Q = 100
     for i in V:
      #   q[i] = random.randint(10,20)
        # Valuee[i] = random.randint(20,30)
@@ -97,14 +97,15 @@ def read_data():
         dat_mat.append(_matrix)
     
     V = range(1,nrow+1)
-    c,q,vlu = {},{},{}
-    Q = 10000
+    c,q,vlu,x,y = {},{},{},{},{}
+    Q = 100
    # q = {}
     for i in V:
         q[i] = dat_mat[1][i-1][0]
         vlu[i] = dat_mat[2][i-1][0]
         x[i] = dat_mat[0][i-1][0]
         y[i] = dat_mat[0][i-1][1]
+    for i in V:
         for j in V:
             if j > i:
                 c[i,j] = distance(x[i],y[i],x[j],y[j])
@@ -166,7 +167,7 @@ if __name__ == "__main__":
     
     
     #n = 20
-    m = 2
+    m = 5
     seed = 1
     random.seed(seed)
     #V,c,q,Q = make_data(n)
