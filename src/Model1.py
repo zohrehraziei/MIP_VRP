@@ -1,13 +1,17 @@
 """
 Porgrammer Zohreh Raziei: zohrehraziei@gmail.com
-vehicle Routing Problem with using callback for adding cuts
 
-            
-approach:
 
-       - solve the vehicle routing problem.
-       - start with assignment model (depot has a special status)
-       - add cuts until all components of the graph are connected
+vehicle Routing Problem with comparison callback and cut generation for adding cuts
+The input consists of a set of n + 1 points, a depot and n customers; an (n + 1) × (n + 1)
+matrix d = [d_ij ] with the distances between every pair of points i and j; 
+an n-dimensional demand vector q = [q_i] giving the amount to be delivered to customer i; 
+and a vehicle capacity Q.
+A solution is a set of routes, starting and ending at the depot, that visit every 
+customer exactly once in such a way that the sum of the demands of the customers
+ of each route does not exceed the vehicle capacity. 
+The objective is to find a solution with minimum total route distance.
+
        
     Parameters:
         - V: set/list of nodes in the graph
@@ -16,13 +20,6 @@ approach:
         - q[i]: demand for customer i
         - Q: vehicle capacity
         
-    Returns the optimum objective value and the list of edges used.
-    
-    vrp_callback: add constraint to eliminate infeasible solutions
-            - Parameters: gurobi standard:
-            - model: current model
-            - where: indicator for location in the search
-        If solution is infeasible, adds a cut using cbLazy
         
 """
 import math
@@ -137,7 +134,7 @@ def make_data(n):
     x = dict([(i,random.random()) for i in V])
     y = dict([(i,random.random()) for i in V])
     c,q,vlu = {},{}
-    Q = 1000
+    Q = 100
     for i in V:
      #   q[i] = random.randint(10,20)
        # Valuee[i] = random.randint(20,30)
@@ -166,15 +163,18 @@ def read_data():
         dat_mat.append(_matrix)
     
     V = range(1,nrow+1)
-    c,q,vlu = {},{},{}
-    Q = 1000
-   # q = {}
+    c,q,vlu,x,y = {},{},{},{},{}
+    Q = 100
     for i in V:
         q[i] = dat_mat[1][i-1][0]
         vlu[i] = dat_mat[2][i-1][0]
+        x[i] = dat_mat[0][i-1][0]
+        y[i] = dat_mat[0][i-1][1]
+        
+    for i in V:
         for j in V:
             if j > i:
-                c[i,j] = dat_mat[0][i-1][j-1]
+                c[i,j] = distance(x[i],y[i],x[j],y[j])
           
     return V,c,q,Q,vlu
 
@@ -229,7 +229,7 @@ if __name__ == "__main__":
     
     
     #n = 20
-    m = 2
+    m = 5
     seed = 1
     random.seed(seed)
     #V,c,q,Q = make_data(n)
