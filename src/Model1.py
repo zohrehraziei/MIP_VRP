@@ -27,7 +27,7 @@ import random
 import networkx
 from gurobipy import *
 
-def vrp(V,c,m,q,Q,vlu):
+def vrp(V,c,m,q,Q):
     def vrp_callback(model,where):
 
         # remember to set     model.params.DualReductions = 0     before using!
@@ -77,7 +77,7 @@ def vrp(V,c,m,q,Q,vlu):
     model.__data = x
     return model,vrp_callback
 ###############################################################################
-def vrp2(V,c,m,q,Q,vlu):    
+def vrp2(V,c,m,q,Q):    
     def vrp_cutgen(model):
         isCut = False
         x = model.__data
@@ -133,8 +133,8 @@ def make_data(n):
     V = range(1,n+1)
     x = dict([(i,random.random()) for i in V])
     y = dict([(i,random.random()) for i in V])
-    c,q,vlu = {},{}
-    Q = 100
+    c,q = {},{}
+    Q = 160
     for i in V:
      #   q[i] = random.randint(10,20)
        # Valuee[i] = random.randint(20,30)
@@ -142,7 +142,7 @@ def make_data(n):
             if j > i:
                 c[i,j] = distance(x[i],y[i],x[j],y[j])
                 
-    return V,c,q,Q,vlu
+    return V,c,q,Q
 
 def read_data():
     import xlrd
@@ -150,7 +150,7 @@ def read_data():
     wkb=xlrd.open_workbook(file_loc)
     dat_mat = []
     nrow = 0
-    for sht in range(3): #Three sheets: 0:c[i,j] 1:q[j], 2:vlu[j]
+    for sht in range(2): #Three sheets: 0:c[i,j] 1:q[j], 2:vlu[j]
         sheet=wkb.sheet_by_index(sht)
         _matrix=[]
         nrow = 0
@@ -163,11 +163,11 @@ def read_data():
         dat_mat.append(_matrix)
     
     V = range(1,nrow+1)
-    c,q,vlu,x,y = {},{},{},{},{}
-    Q = 100
+    c,q,x,y = {},{},{},{}
+    Q = 160
     for i in V:
         q[i] = dat_mat[1][i-1][0]
-        vlu[i] = dat_mat[2][i-1][0]
+        #vlu[i] = dat_mat[2][i-1][0]
         x[i] = dat_mat[0][i-1][0]
         y[i] = dat_mat[0][i-1][1]
         
@@ -176,7 +176,7 @@ def read_data():
             if j > i:
                 c[i,j] = distance(x[i],y[i],x[j],y[j])
           
-    return V,c,q,Q,vlu
+    return V,c,q,Q
 
 def represent(x):
     edges = []
@@ -233,8 +233,8 @@ if __name__ == "__main__":
     seed = 1
     random.seed(seed)
     #V,c,q,Q = make_data(n)
-    V,c,q,Q,vlu = read_data()
-    model,vrp_callback = vrp(V,c,m,q,Q,vlu)
+    V,c,q,Q = read_data()
+    model,vrp_callback = vrp(V,c,m,q,Q)
 
     # model.Params.OutputFlag = 0 # silent mode
     # 0 : min value
@@ -257,7 +257,7 @@ if __name__ == "__main__":
     print("----------------------------------------------------------------")
     print("--- Cut Generation:")
     start_time2 = time.time()
-    model,vrp_cutgen = vrp2(V,c,m,q,Q,vlu)
+    model,vrp_cutgen = vrp2(V,c,m,q,Q)
     model.params.LazyConstraints = 0
     isCut = True
     while isCut:
