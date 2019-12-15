@@ -134,7 +134,7 @@ def make_data(n):
     x = dict([(i,random.random()) for i in V])
     y = dict([(i,random.random()) for i in V])
     c,q = {},{}
-    Q = 160
+    Q = 150
     for i in V:
      #   q[i] = random.randint(10,20)
        # Valuee[i] = random.randint(20,30)
@@ -164,7 +164,7 @@ def read_data():
     
     V = range(1,nrow+1)
     c,q,x,y = {},{},{},{}
-    Q = 160
+    Q = 150
     for i in V:
         q[i] = dat_mat[1][i-1][0]
         #vlu[i] = dat_mat[2][i-1][0]
