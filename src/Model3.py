@@ -179,11 +179,12 @@ if __name__ == "__main__":
     model.params.LazyConstraints = 1  
     #1: Implies Gurobi algorithms to avoid certain reductions and transformations
     #that are incompatible with lazy constraints.
+    start_time = time.time()
     model.optimize(vrp_callback)
     x = model.__data
     
     edges = represent(x)
-    
+    print("--- Running time: %s seconds ---" % (time.time() - start_time))    
     print ("Optimal solution:",model.ObjVal)
     print ("Edges in the solution:")
     print (sorted(edges))
