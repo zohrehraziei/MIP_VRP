@@ -27,8 +27,8 @@ def make_data(n):
     V = range(1,n+1)
     #x = dict([(i,random.random()) for i in V])
     #y = dict([(i,random.random()) for i in V])
-    c,q,vlu,x,y = {},{},{},{},{}
-    Q = 100
+    c,q,x,y = {},{},{},{}
+    Q = 120
     for i in V:
      #   q[i] = random.randint(10,20)
        # Valuee[i] = random.randint(20,30)
@@ -44,7 +44,7 @@ def read_data():
     wkb=xlrd.open_workbook(file_loc)
     dat_mat = []
     nrow = 0
-    for sht in range(3): #Three sheets: 0:c[i,j] 1:q[j], 2:vlu[j]
+    for sht in range(2): #Three sheets: 0:c[i,j] 1:q[j], 2:vlu[j]
         sheet=wkb.sheet_by_index(sht)
         _matrix=[]
         nrow = 0
@@ -57,12 +57,11 @@ def read_data():
         dat_mat.append(_matrix)
     
     V = range(1,nrow+1)
-    c,q,vlu,x,y = {},{},{},{},{}
-    Q = 100
+    c,q,x,y = {},{},{},{}
+    Q = 120
    # q = {}
     for i in V:
         q[i] = dat_mat[1][i-1][0]
-        vlu[i] = dat_mat[2][i-1][0]
         x[i] = dat_mat[0][i-1][0]
         y[i] = dat_mat[0][i-1][1]
     for i in V:
@@ -74,7 +73,7 @@ def read_data():
 #            if j > i:
 #                c[i,j] = dat_mat[0][i-1][j-1]
           
-    return V,c,q,Q,vlu
+    return V,c,q,Q
 
 def represent(x):
     edges = []
@@ -114,7 +113,42 @@ def represent(x):
                 
     return edges
 
-def heuristic(V,c,m,q,Q,vlu):
+def heuristic_greedy(V,c,m,q,Q):
+    demands = list(q.values())
+    nodes = list(q.keys())
+    measure = [demands[i-1]*(0.0001/(c[(1,int(i))] if i != 1 and c[(1,int(i))] != 0 else 10000)) for i in nodes]
+    veh_set = []   
+    obj = 0
+    
+    while len(demands) > 0:
+        n1 = measure.index(max(measure))
+        if n1 > 1:
+            veh = [nodes[n1]]
+            obj += c[(1,nodes[n1])]
+            measure.remove(measure[n1])
+            nodes.remove(nodes[n1])
+            C = Q - q[nodes[n1]]
+            while C > 0:
+                ls = [c[(veh[-1],int(i))] for i in nodes if int(i) != 1 and i > veh[-1]]
+                ls2 = [int(i) for i in nodes if int(i) != 1 and i > veh[-1]]
+                if len(ls)>0:
+                    n1 = int(ls2[ls.index(min(ls))]) - 1
+                    C = C - q[n1]
+                    obj += c[(veh[-1],n1+1)]
+                    veh.append(n1+1)
+                    measure.remove(measure[nodes.index(n1+1)])
+                    nodes.remove(n1+1)
+                else:
+                    break
+            obj += c[(1,veh[-1])]
+            veh_set.append(veh)
+        else:
+            break
+            
+    return veh_set, obj
+
+
+def heuristic(V,c,m,q,Q):
     nodes = list(q.values())
     nodes2 = list(q.keys())
     veh_set = []   
@@ -146,9 +180,8 @@ def heuristic(V,c,m,q,Q,vlu):
             break
             
     print(veh_set)
-    print ("objective: ", obj)
-        
-        
+    print ("objective: ", obj)  
+      
 
 def var_print(x):
     for var in x:
@@ -163,12 +196,16 @@ if __name__ == "__main__":
     
     
     #n = 20
-    m = 5
+    m = 8
     seed = 1
     random.seed(seed)
     #V,c,q,Q = make_data(n)
-    V,c,q,Q,vlu = read_data()
-    heuristic(V,c,m,q,Q,vlu)
+    V,c,q,Q = read_data()
+    veh_set, obj = heuristic_greedy(V,c,m,q,Q)
+    print ("heuristic objective: ", obj)
+    print (veh_set)
+    start_time2 = time.time()
+    print("--- Running time: %s seconds ---" % (time.time() - start_time2))
     
     start_time2 = time.time()
     
