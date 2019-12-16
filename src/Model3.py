@@ -75,7 +75,7 @@ def make_data(n):
     x = dict([(i,random.random()) for i in V])
     y = dict([(i,random.random()) for i in V])
     c,q,x,y = {},{},{},{}
-    Q = 150
+    Q = 400
     for i in V:
      #   q[i] = random.randint(10,20)
        # Valuee[i] = random.randint(20,30)
@@ -105,7 +105,7 @@ def read_data():
     
     V = range(1,nrow+1)
     c,q,x,y = {},{},{},{}
-    Q = 150
+    Q = 400
    # q = {}
     for i in V:
         q[i] = dat_mat[1][i-1][0]
@@ -164,9 +164,9 @@ def var_print(x):
             
 if __name__ == "__main__":
     import sys
-
+    import time
     #n = 20
-    m = 5
+    m = 4
     seed = 1
     random.seed(seed)
     #V,c,q,Q = make_data(n)
