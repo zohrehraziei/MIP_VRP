@@ -2,7 +2,7 @@
 """
 Created on Sun Dec 15 11:22:44 2019
 
-@author: zohre
+@author: ZohrehRaziei
 """
 
 """
@@ -185,19 +185,19 @@ def heuristic_greedy(V,c,m,q,Q):
         if len(nodes) > 1:
             veh = [nodes[n1]]
             obj += c[(1,nodes[n1])]
+            C = Q - q[nodes[n1] - 1]
             measure.remove(measure[n1])
             nodes.remove(nodes[n1])
-            C = Q - q[nodes[n1]]
             while C > 0:
                 ls = [c[(min(veh[-1],int(i)),max(veh[-1],int(i)))] for i in nodes if int(i) != 1]
                 ls2 = [int(i) for i in nodes if int(i) != 1]
                 if len(ls)>0:
-                    n1 = int(ls2[ls.index(min(ls))]) - 1
-                    C = C - q[n1]
-                    obj += c[(min(veh[-1],int(n1+1)),max(veh[-1],int(n1+1)))]
-                    veh.append(n1+1)
-                    measure.remove(measure[nodes.index(n1+1)])
-                    nodes.remove(n1+1)
+                    n1 = int(ls2[ls.index(min(ls))]) 
+                    C = C - q[n1 - 1]
+                    obj += c[(min(veh[-1],int(n1)),max(veh[-1],int(n1)))]
+                    veh.append(n1)
+                    measure.remove(measure[nodes.index(n1)])
+                    nodes.remove(n1)
                 else:
                     break
             obj += c[(1,veh[-1])]
@@ -256,7 +256,7 @@ if __name__ == "__main__":
     
     
     #n = 20
-    m = 3
+    m = 10
     seed = 1
     random.seed(seed)
     #V,c,q,Q = make_data(n)
