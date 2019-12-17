@@ -7,7 +7,7 @@ Created on Sun Dec 15 11:22:44 2019
 
 """
 Porgrammer Zohreh Raziei: zohrehraziei@gmail.com
-vehicle Routing Problem with using cut generation
+vehicle Routing Problem with using Greedy Heuristic
 
         
 """
@@ -22,21 +22,6 @@ def distance(x1,y1,x2,y2):
     """distance: euclidean distance between (x1,y1) and (x2,y2)"""
     return math.sqrt((x2-x1)**2 + (y2-y1)**2)
 
-def make_data(n):
-    """make_data: compute matrix distance based on euclidean distance"""
-    V = range(1,n+1)
-    #x = dict([(i,random.random()) for i in V])
-    #y = dict([(i,random.random()) for i in V])
-    c,q,x,y = {},{},{},{}
-    Q = 120
-    for i in V:
-     #   q[i] = random.randint(10,20)
-       # Valuee[i] = random.randint(20,30)
-        for j in V:
-            if j > i:
-                c[i,j] = distance(x[i],y[i],x[j],y[j])
-                
-    return V,c,q,Q,vlu
 
 def read_data():
     import xlrd
@@ -58,7 +43,7 @@ def read_data():
     
     V = range(1,nrow+1)
     c,q,x,y = {},{},{},{}
-    Q = 120
+    Q = 350
    # q = {}
     for i in V:
         q[i] = dat_mat[1][i-1][0]
@@ -75,69 +60,32 @@ def read_data():
           
     return V,c,q,Q
 
-def represent(x):
-    edges = []
-    tour = ''
-    for i in V:
-        if i > V[0] and x[V[0],i].X > .5:
-            cond = True
-            for t in edges:
-                if str(i) in t:
-                    cond = False
-                    break
-            if cond == True:
-                tour = str(V[0]) + ' - ' + str(i)
-                nextn = i   
-                prevnext = nextn
-                point = [str(V[0]) + ',' + str(i)]
-                for v in V:
-                    if nextn == V[0]:
-                        break
-                    for (ii,jj) in x:
-                        e = str(ii) + ',' + str(jj)
-                        if e not in point and x[ii,jj].X > .5:
-                            if str(nextn) == str(ii):
-                                point.append(str(ii) + ',' + str(jj))
-                                tour += ' - ' + str(jj)
-                                nextn = jj
-                            elif str(nextn) == str(jj):
-                                point.append(str(ii) + ',' + str(jj))
-                                tour += ' - ' + str(ii)
-                                nextn = ii
-                            if nextn == V[0]:
-                                edges.append(tour)
-                                break
-                if nextn == prevnext:
-                    tour += ' - ' + str(V[0])
-                    edges.append(tour)
-                
-    return edges
 
 def heuristic_greedy(V,c,m,q,Q):
     demands = list(q.values())
     nodes = list(q.keys())
-    measure = [demands[i-1]*(0.0001/(c[(1,int(i))] if i != 1 and c[(1,int(i))] != 0 else 10000)) for i in nodes]
+    measure = [demands[i-1]*(0.1/(c[(1,int(i))] if i != 1 and c[(1,int(i))] != 0 else 10000)) for i in nodes]
     veh_set = []   
     obj = 0
     
     while len(demands) > 0:
         n1 = measure.index(max(measure))
-        if n1 > 1:
+        if len(nodes) > 1:
             veh = [nodes[n1]]
             obj += c[(1,nodes[n1])]
+            C = Q - q[nodes[n1] - 1]
             measure.remove(measure[n1])
             nodes.remove(nodes[n1])
-            C = Q - q[nodes[n1]]
             while C > 0:
-                ls = [c[(veh[-1],int(i))] for i in nodes if int(i) != 1 and i > veh[-1]]
-                ls2 = [int(i) for i in nodes if int(i) != 1 and i > veh[-1]]
+                ls = [c[(min(veh[-1],int(i)),max(veh[-1],int(i)))] for i in nodes if int(i) != 1]
+                ls2 = [int(i) for i in nodes if int(i) != 1]
                 if len(ls)>0:
-                    n1 = int(ls2[ls.index(min(ls))]) - 1
-                    C = C - q[n1]
-                    obj += c[(veh[-1],n1+1)]
-                    veh.append(n1+1)
-                    measure.remove(measure[nodes.index(n1+1)])
-                    nodes.remove(n1+1)
+                    n1 = int(ls2[ls.index(min(ls))]) 
+                    C = C - q[n1 - 1]
+                    obj += c[(min(veh[-1],int(n1)),max(veh[-1],int(n1)))]
+                    veh.append(n1)
+                    measure.remove(measure[nodes.index(n1)])
+                    nodes.remove(n1)
                 else:
                     break
             obj += c[(1,veh[-1])]
@@ -148,39 +96,6 @@ def heuristic_greedy(V,c,m,q,Q):
     return veh_set, obj
 
 
-def heuristic(V,c,m,q,Q):
-    nodes = list(q.values())
-    nodes2 = list(q.keys())
-    veh_set = []   
-    obj = 0
-    
-    while len(nodes) > 0:
-        n1 = nodes.index(max(nodes))
-        if n1 > 1:
-            veh = [n1]
-            obj += c[(1,n1)]
-            nodes.remove(q[n1])
-            nodes2.remove(n1)
-            C = Q - q[n1]
-            while C > 0:
-                ls = [c[(veh[-1],int(i))] for i in nodes2 if int(i) != 1 and i > veh[-1]]
-                ls2 = [int(i) for i in nodes2 if int(i) != 1 and i > veh[-1]]
-                if len(ls)>0:
-                    n1 = int(ls2[ls.index(min(ls))])
-                    C = C - q[n1]
-                    obj += c[(veh[-1],n1)]
-                    veh.append(n1)
-                    nodes.remove(q[n1])
-                    nodes2.remove(n1)
-                else:
-                    break
-            obj += c[(1,veh[-1])]
-            veh_set.append(veh)
-        else:
-            break
-            
-    print(veh_set)
-    print ("objective: ", obj)  
       
 
 def var_print(x):
@@ -196,19 +111,14 @@ if __name__ == "__main__":
     
     
     #n = 20
-    m = 8
+    m = 4
     seed = 1
     random.seed(seed)
     #V,c,q,Q = make_data(n)
     V,c,q,Q = read_data()
+    start_time2 = time.time()
     veh_set, obj = heuristic_greedy(V,c,m,q,Q)
     print ("heuristic objective: ", obj)
     print (veh_set)
-    start_time2 = time.time()
-    print("--- Running time: %s seconds ---" % (time.time() - start_time2))
-    
-    start_time2 = time.time()
-    
     print("--- Running time: %s seconds ---" % (time.time() - start_time2))
 
-   
